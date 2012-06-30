@@ -1,6 +1,10 @@
 #!/usr/bin/env python2.7
 """
     Reads out the temp sensors from serial and posts them to https://cosm.com/feeds/64655/
+    
+    cron:
+    */15 * * * * PYTHONUSERBASE=/home/kikadevices/temperature/env /home/kikadevices/temperature/temp_to_cosm.py >> /home/kikadevices/temperature/temp_to_cosm.log 2>&1
+
 """
 
 import serial
@@ -38,8 +42,7 @@ while True:
                
         r = requests.post(url, data=json.dumps(payload), headers=headers)
 
-        print sensor_addr
-        print json.dumps(payload)
+        print sensor_addr, json.dumps(payload)
     except KeyError:
         print "Unknown sensor found %s" % sensor_addr
         continue
@@ -49,5 +52,5 @@ while True:
         continue
 
     except ValueError:
-        print "Done reading."
+        #print "Done reading."
         break
