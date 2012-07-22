@@ -1,56 +1,53 @@
-#!/usr/bin/env python2.7
 """
     Reads out the temp sensors from serial and posts them to https://cosm.com/feeds/64655/
-    
-    cron:
-    */15 * * * * PYTHONUSERBASE=/home/kikadevices/temperature/env /home/kikadevices/temperature/temp_to_cosm.py >> /home/kikadevices/temperature/temp_to_cosm.log 2>&1
-
 """
 
 import serial
 import json
 import requests
 import time
-import exceptions
 
-sensors = {"28B535930013":"hardware_room","288AF85730019":"lounge_area","285BEF57300C7":"random_room"}
 feed_id="64655"
-cosm_api_key="COSM_API_KEY"
+cosm_api_key="MMB-ThRPU2Xwt59I8s9xWmcxoliSAKxIUGNUUDNVWHpuND0g"
+sensors = {
+   "28B535930013"  : "hardware_room",
+   "288AF85730019" : "lounge_area",
+   "285BEF57300C7" : "random_room",
+   "282576B0300C7" : "outside"
+}
 
 #set up the serial and ask for data
-ser = serial.Serial("/dev/ttyUSB0")
+ser = serial.Serial("/dev/ttyUSB0", timeout=10)
+
 ser.flushInput()
-ser.write("g") 
+time.sleep(10)
+ser.write("g")
 
 #current time will be the same for all uploads
 curr_time = time.strftime("%Y-%m-%dT%H:%M:%SZ%z", time.gmtime())
+print curr_time
 
 #read the data
 while True:
-    try:                     
-        sensor_addr,curr_temp,readout_millis,curr_millis = ser.readline().split(",")
-        
-        # get sensor-room mapping
-        datapoint_id=sensors[sensor_addr]
+    line = ser.readline()
+    if not line or line == '\r\n':
+        break
+    sensor_addr,curr_temp,readout_millis,curr_millis = line.split(",")
 
-        if int(curr_millis)-int(readout_millis)>300000:
-            raise exceptions.Warning("Haven't read new reading from %s for over 5 minutes.")
-       
-        url="http://api.cosm.com/v2/feeds/%s/datastreams/%s/datapoints" % (feed_id,datapoint_id)
-        headers = {'X-ApiKey':cosm_api_key}
-        payload={'datapoints': [{'at': curr_time, 'value': curr_temp}]}
-               
-        r = requests.post(url, data=json.dumps(payload), headers=headers)
-
-        print sensor_addr, json.dumps(payload)
-    except KeyError:
+    # get sensor-room mapping
+    datapoint_id = sensors.get(sensor_addr)
+    if datapoint_id is None:
         print "Unknown sensor found %s" % sensor_addr
         continue
 
-    except exceptions.Warning, e:
-        print e
+    if int(curr_millis)-int(readout_millis)>300000:
+        print "Haven't read new reading from %s for over 5 minutes." % datapoint_id
         continue
 
-    except ValueError:
-        #print "Done reading."
-        break
+    url="http://api.cosm.com/v2/feeds/%s/datastreams/%s/datapoints" % (feed_id,datapoint_id)
+    headers = {'X-ApiKey':cosm_api_key}
+    payload={'datapoints': [{'at': curr_time, 'value': curr_temp}]}
+
+    print sensor_addr,json.dumps(payload)
+
+    r = requests.post(url, data=json.dumps(payload), headers=headers)
