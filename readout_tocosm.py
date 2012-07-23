@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 """
     Reads out the temp sensors from serial and posts them to https://cosm.com/feeds/64655/
 """
@@ -7,10 +8,15 @@ import json
 import requests
 import time
 import ConfigParser
+import os
+import sys
 
 #get the feed_id and api_key from .gitignored file
-config = configParser.ConfigParser()
-config.read("readout_tocosm.cfg")
+pwd = os.path.dirname(os.path.realpath(sys.argv[0]))
+config_file = os.path.join(pwd,"readout_tocosm.cfg")
+
+config = ConfigParser.ConfigParser()
+config.read(config_file)
 cosm = dict(config.items("cosm"))
 
 sensors = {
