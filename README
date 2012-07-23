@@ -1,0 +1,4 @@
+Temperature Sensor network in skopjehacklab
+===========================================
+
+The arduino reads the DS18B20 one wire temperature sensors and writes them to serial. The python scripts reads them and posts them to (https://cosm.com/feeds/64655/)

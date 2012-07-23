@@ -6,9 +6,13 @@ import serial
 import json
 import requests
 import time
+import ConfigParser
 
-feed_id="64655"
-cosm_api_key="MMB-ThRPU2Xwt59I8s9xWmcxoliSAKxIUGNUUDNVWHpuND0g"
+#get the feed_id and api_key from .gitignored file
+config = configParser.ConfigParser()
+config.read("readout_tocosm.cfg")
+cosm = dict(config.items("cosm"))
+
 sensors = {
    "28B535930013"  : "hardware_room",
    "288AF85730019" : "lounge_area",
@@ -44,8 +48,8 @@ while True:
         print "Haven't read new reading from %s for over 5 minutes." % datapoint_id
         continue
 
-    url="http://api.cosm.com/v2/feeds/%s/datastreams/%s/datapoints" % (feed_id,datapoint_id)
-    headers = {'X-ApiKey':cosm_api_key}
+    url="http://api.cosm.com/v2/feeds/%s/datastreams/%s/datapoints" % (cosm['feed_id'],datapoint_id)
+    headers = {'X-ApiKey':cosm['api_key']}
     payload={'datapoints': [{'at': curr_time, 'value': curr_temp}]}
 
     print sensor_addr,json.dumps(payload)
